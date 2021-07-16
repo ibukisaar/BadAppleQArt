@@ -102,7 +102,7 @@ namespace QArt.NET {
             }
 
 
-            RSEncode.Encode(MemoryMarshal.CreateSpan(ref Unsafe.AsRef<byte>(overflowData), dataLength), tempEcc);
+            RSEncode.Encode(MemoryMarshal.CreateReadOnlySpan(ref Unsafe.AsRef<byte>(overflowData), dataLength), tempEcc);
 
             for (int i = 0; i < expects.Count; i++) {
                 int bitIndex = expects[i];

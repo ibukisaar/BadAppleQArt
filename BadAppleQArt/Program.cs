@@ -13,14 +13,14 @@ using QArt.NET;
 
 namespace BadAppleQArt {
     class Program {
-        const string SourceImagesPath = @"E:\badapple";
+        const string SourceImagesPath = @"F:\badapple";
         static readonly Regex lyricsRegex = new Regex(@"^(\d+\.\d{2}) (.*)$", RegexOptions.Multiline | RegexOptions.Compiled);
 
         unsafe static void Main(string[] args) {
             LyricLine[] lyrics = GetLyricLines();
 
             int version = 20;
-            QREcLevel ecLevel = QREcLevel.L;
+            QREcLevel ecLevel = QREcLevel.M;
             QRLayout layout = QRLayout.GetLayout(version, ecLevel);
             int qrSize = layout.Size;
 
@@ -36,8 +36,11 @@ namespace BadAppleQArt {
             int endY = Math.Min(H, qrSize - StartY);
             MagicBit black = new MagicBit(MagicBitType.Expect, true);
             MagicBit white = new MagicBit(MagicBitType.Expect, false);
+            MagicBit freedomBlack = new MagicBit(MagicBitType.Freedom, true);
+            MagicBit freedomWhite = new MagicBit(MagicBitType.Freedom, false);
             var random = new Random();
-            var freedomCount = QRHelper.GetTotalEccBytes(version, ecLevel);
+            // var freedomCount = QRHelper.GetTotalEccBytes(version, ecLevel);
+            int freedomCount = 500;
 
             bool[] encodedData = null;
             var qrImage = new MagicBit[layout.Map2D.Length];
@@ -60,6 +63,8 @@ namespace BadAppleQArt {
             gr.Clear(Color.White);
             string[] images = Directory.GetFiles(SourceImagesPath, "*.png");
             Array.Sort(images);
+            string outDir = Path.Combine(SourceImagesPath, "out");
+            if (!Directory.Exists(outDir)) Directory.CreateDirectory(outDir);
 
             var drawRects = new List<Rectangle>();
 
@@ -82,28 +87,114 @@ namespace BadAppleQArt {
 
                 using Bitmap originalImage = new Bitmap(images[imageIndex]);
                 using Bitmap bitmap = new Bitmap(originalImage, new Size(W, H));
+                //using Bitmap smallBitmap = new Bitmap(bitmap, new Size(W / 24, H / 24));
                 var bitmapData = bitmap.LockBits(new Rectangle(0, 0, W, H), ImageLockMode.ReadOnly, PixelFormat.Format32bppArgb);
+                //var smallBitmapData = smallBitmap.LockBits(new Rectangle(0, 0, W / 24, H / 24), ImageLockMode.ReadOnly, PixelFormat.Format32bppArgb);
+                //var smallPointer = (uint*)smallBitmapData.Scan0;
+                const double MutationsProbability = 0.055;
+                int blackCount = 0, whiteCount = 0;
+
+                for (int y = beginY; y < endY; y++) {
+                    uint* p = (uint*)bitmapData.Scan0 + y * W + beginX;
+                    for (int x = beginX; x < endX; x++, p++) {
+                        byte b = ((byte*)p)[0];
+                        byte g = ((byte*)p)[1];
+                        byte r = ((byte*)p)[2];
+                        if ((b + g + r) > 384) {
+                            whiteCount++;
+                        } else {
+                            blackCount++;
+                        }
+                    }
+                }
+
+                static double GetMutationsProbability(double value) {
+                    double a = 7.5 * (value - 0.5);
+                    double b = Math.Exp(a);
+                    return ((b - 1 / b) / (b + 1 / b) + 1) * MutationsProbability;
+                }
+
+                double blackMutationsProbability = GetMutationsProbability(blackCount / (double)(blackCount + whiteCount));
+                double whiteMutationsProbability = GetMutationsProbability(whiteCount / (double)(blackCount + whiteCount));
 
                 for (int y = beginY; y < endY; y++) {
                     uint* p = (uint*)bitmapData.Scan0 + y * W + beginX;
                     int imgOffset = (StartY + y) * qrSize + StartX;
                     for (int x = beginX; x < endX; x++, p++) {
+                        //uint* sp = smallPointer + (y / 24) * (W / 24) + (x / 24);
+                        //byte b = ((byte*)p)[0];
+                        //byte g = ((byte*)p)[1];
+                        //byte r = ((byte*)p)[2];
+                        //if ((b + g + r) > 384) {
+                        //    b = ((byte*)sp)[0];
+                        //    g = ((byte*)sp)[1];
+                        //    r = ((byte*)sp)[2];
+                        //    if ((b + g + r) > 384 && random.NextDouble() < MutationsProbability) {
+                        //        Unsafe.Add(ref imageFirst, imgOffset + x) = freedomBlack;
+                        //    } else {
+                        //        Unsafe.Add(ref imageFirst, imgOffset + x) = white;
+                        //    }
+                        //} else {
+                        //    b = ((byte*)sp)[0];
+                        //    g = ((byte*)sp)[1];
+                        //    r = ((byte*)sp)[2];
+                        //    if ((b + g + r) <= 384 && random.NextDouble() < MutationsProbability) {
+                        //        Unsafe.Add(ref imageFirst, imgOffset + x) = freedomWhite;
+                        //    } else {
+                        //        Unsafe.Add(ref imageFirst, imgOffset + x) = black;
+                        //    }
+                        //}
+
                         byte b = ((byte*)p)[0];
                         byte g = ((byte*)p)[1];
                         byte r = ((byte*)p)[2];
-                        Unsafe.Add(ref imageFirst, imgOffset + x) = (b + g + r) > 384 ? white : black;
+                        if ((b + g + r) > 384) {
+                            if (random.NextDouble() < whiteMutationsProbability) {
+                                Unsafe.Add(ref imageFirst, imgOffset + x) = freedomBlack;
+                            } else {
+                                Unsafe.Add(ref imageFirst, imgOffset + x) = white;
+                            }
+                            //Unsafe.Add(ref imageFirst, imgOffset + x) = white;
+                        } else {
+                            if (random.NextDouble() < blackMutationsProbability) {
+                                Unsafe.Add(ref imageFirst, imgOffset + x) = freedomWhite;
+                            } else {
+                                Unsafe.Add(ref imageFirst, imgOffset + x) = black;
+                            }
+                            //Unsafe.Add(ref imageFirst, imgOffset + x) = black;
+                        }
                     }
                 }
 
-                bitmap.UnlockBits(bitmapData);
+                QRMapInfo** layoutMap = layout.Map2D.Pointer;
+                //for (int y = beginY; y < endY; y++) {
+                //    int imgOffset = (StartY + y) * qrSize + StartX;
+                //    for (int x = beginX; x < endX; x++) {
+                //        if (layoutMap[imgOffset + x]->Type is QRType.AlignmentPatterns) {
+                //            Unsafe.Add(ref imageFirst, imgOffset + x - qrSize - 1) = freedomWhite;
+                //            Unsafe.Add(ref imageFirst, imgOffset + x - qrSize) = freedomWhite;
+                //            Unsafe.Add(ref imageFirst, imgOffset + x - qrSize + 1) = freedomWhite;
+                //            Unsafe.Add(ref imageFirst, imgOffset + x - 1) = freedomWhite;
+                //            Unsafe.Add(ref imageFirst, imgOffset + x + 1) = freedomWhite;
+                //            Unsafe.Add(ref imageFirst, imgOffset + x + qrSize - 1) = freedomWhite;
+                //            Unsafe.Add(ref imageFirst, imgOffset + x + qrSize) = freedomWhite;
+                //            Unsafe.Add(ref imageFirst, imgOffset + x + qrSize + 1) = freedomWhite;
+                //        }
+                //    }
+                //}
 
-                for (int i = 0; i < freedomCount;) {
-                    int offset = random.Next(qrImage.Length);
-                    ref MagicBit bit = ref Unsafe.Add(ref imageFirst, offset);
-                    if (bit.Type is MagicBitType.Freedom) continue;
-                    bit = new MagicBit(MagicBitType.Freedom, random.Next(2) != 0);
-                    i++;
-                }
+
+
+                bitmap.UnlockBits(bitmapData);
+                //smallBitmap.UnlockBits(smallBitmapData);
+
+                //for (int i = 0; i < freedomCount;) {
+                //    int offset = random.Next(qrImage.Length);
+                //    ref MagicBit bit = ref Unsafe.Add(ref imageFirst, offset);
+                //    if (bit.Type is MagicBitType.Freedom) continue;
+                //    bit = new MagicBit(MagicBitType.Freedom, false);
+                //    i++;
+                //}
 
                 QRCodeMagician.WriteDataToImage(layout, encodedData, qrImage);
                 var qr = QRCodeMagician.ImageArt(layout, qrImage);
@@ -116,18 +207,25 @@ namespace BadAppleQArt {
                     nint offset = 0;
                     for (int y = 0; y < qrSize; y++) {
                         for (int x = 0; x < qrSize; x++, offset++) {
+                            if (layoutMap[offset]->Type is QRType.AlignmentPatterns or QRType.TimingPatterns && x >= StartX && x < StartX + W && y >= StartY && y < StartY + H) {
+                                if (Unsafe.Add(ref imageFirst, offset).Value) {
+                                    drawRects.Add(new Rectangle(QRPadding + x * QRCellSize, QRPadding + y * QRCellSize, QRCellSize, QRCellSize));
+                                }
+                                continue;
+                            }
                             if (map[offset].IsBlack) {
                                 drawRects.Add(new Rectangle(QRPadding + x * QRCellSize, QRPadding + y * QRCellSize, QRCellSize, QRCellSize));
                             }
                         }
                     }
+
+
+
                     gr.FillRectangles(Brushes.Black, drawRects.ToArray());
                 }
 
                 gr.Flush();
 
-                string outDir = Path.Combine(SourceImagesPath, "out");
-                if (!Directory.Exists(outDir)) Directory.CreateDirectory(outDir);
 
                 canvas.Save(Path.Combine(outDir, Path.GetFileName(images[imageIndex])));
 
