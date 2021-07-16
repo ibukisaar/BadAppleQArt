@@ -20,7 +20,7 @@ namespace BadAppleQArt {
             LyricLine[] lyrics = GetLyricLines();
 
             int version = 20;
-            QREcLevel ecLevel = QREcLevel.M;
+            QREcLevel ecLevel = QREcLevel.L;
             QRLayout layout = QRLayout.GetLayout(version, ecLevel);
             int qrSize = layout.Size;
 
