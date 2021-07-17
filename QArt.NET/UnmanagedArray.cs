@@ -9,7 +9,11 @@ namespace QArt.NET {
     [DebuggerTypeProxy(typeof(UnmanagedArray<>.DebugView))]
     [DebuggerDisplay("{ToString(),raw}")]
     unsafe public sealed class UnmanagedArray<T> : IList<T>, IReadOnlyList<T>, IDisposable where T : unmanaged {
-        public static UnmanagedArray<T> Empty { get; } = new UnmanagedArray<T>(0);
+        static class EmptyArray {
+            public static readonly UnmanagedArray<T> Empty = new(length: 0);
+        }
+
+        public static UnmanagedArray<T> Empty => EmptyArray.Empty;
 
 
         private readonly RawArray raw;

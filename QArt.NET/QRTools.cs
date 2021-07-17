@@ -81,22 +81,22 @@ namespace QArt.NET {
                     Unsafe.Add(ref @out, i) = (byte)(Unsafe.As<bool, byte>(ref @in) << 7);
                     break;
                 case 2:
-                    Unsafe.Add(ref @out, i) = ParallelBitExtract((ulong)Unsafe.As<bool, ushort>(ref @in) << 48);
+                    Unsafe.Add(ref @out, i) = ParallelBitExtract(ReadUInt64<ushort>(ref @in));
                     break;
                 case 3:
-                    Unsafe.Add(ref @out, i) = ParallelBitExtract(ReadUInt64<Block3>(ref @in) << 40);
+                    Unsafe.Add(ref @out, i) = ParallelBitExtract(ReadUInt64<Block3>(ref @in));
                     break;
                 case 4:
-                    Unsafe.Add(ref @out, i) = ParallelBitExtract((ulong)Unsafe.As<bool, uint>(ref @in) << 32);
+                    Unsafe.Add(ref @out, i) = ParallelBitExtract(ReadUInt64<uint>(ref @in));
                     break;
                 case 5:
-                    Unsafe.Add(ref @out, i) = ParallelBitExtract(ReadUInt64<Block5>(ref @in) << 24);
+                    Unsafe.Add(ref @out, i) = ParallelBitExtract(ReadUInt64<Block5>(ref @in));
                     break;
                 case 6:
-                    Unsafe.Add(ref @out, i) = ParallelBitExtract(ReadUInt64<Block6>(ref @in) << 16);
+                    Unsafe.Add(ref @out, i) = ParallelBitExtract(ReadUInt64<Block6>(ref @in));
                     break;
                 case 7:
-                    Unsafe.Add(ref @out, i) = ParallelBitExtract(ReadUInt64<Block7>(ref @in) << 8);
+                    Unsafe.Add(ref @out, i) = ParallelBitExtract(ReadUInt64<Block7>(ref @in));
                     break;
             }
 

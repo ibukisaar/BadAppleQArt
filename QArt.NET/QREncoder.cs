@@ -477,12 +477,12 @@ namespace QArt.NET {
             }
         }
 
-        public static bool[] ToFinalEncodedData(QRLayout layout, bool[] encodedData) {
+        public static bool[] ToFinalEncodedData(QRLayout layout, ReadOnlySpan<bool> encodedData) {
             int dataCapacity = layout.DataCapacity * 8;
             if (dataCapacity < encodedData.Length) throw new ArgumentOutOfRangeException(nameof(encodedData));
             int finalLength = Math.Min(dataCapacity, encodedData.Length + 4);
             bool[] result = GC.AllocateUninitializedArray<bool>(finalLength);
-            encodedData.CopyTo(result.AsSpan());
+            encodedData.CopyTo(result);
             result.AsSpan(encodedData.Length).Clear();
             return result;
         }
