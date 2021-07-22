@@ -419,7 +419,7 @@ namespace QArt.NET {
                 var result = new UnmanagedArray<byte>(map2D.Length, fillValue: 0);
                 for (int y = 0; y < size; y++) {
                     for (int x = 0; x < size; x++) {
-                        int offset = y + size * x;
+                        int offset = x + size * y;
                         if (((1 << (int)map2D[offset]->Type) & flags) != 0 && g(x, y)) {
                             result[offset] = 1;
                         }
