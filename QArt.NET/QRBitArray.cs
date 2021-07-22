@@ -26,7 +26,7 @@ namespace QArt.NET {
             get => ref array[i];
         }
 
-        public ref bool this[long i] {
+        public ref bool this[nint i] {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             get => ref array[i];
         }
@@ -55,7 +55,7 @@ namespace QArt.NET {
 
         internal ref struct BufferedWriter {
             private readonly QRBitArray bitArray;
-            private long offset;
+            private nint offset;
             private int buffer;
             private int bufferBits;
 

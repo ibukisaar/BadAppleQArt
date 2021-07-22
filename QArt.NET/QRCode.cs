@@ -87,7 +87,7 @@ namespace QArt.NET {
 
             QRMapInfo** layoutMap2D = Layout.Map2D.Pointer;
             QRValue* valueMap2D = Values.Pointer;
-            for (long i = 0, len = Values.Length; i < len; i++) {
+            for (nint i = 0, len = Values.Length; i < len; i++) {
                 if (((1 << (int)layoutMap2D[i]->Type) & flags) != 0) {
                     valueMap2D[i] = layoutMap2D[i]->Value;
                 }

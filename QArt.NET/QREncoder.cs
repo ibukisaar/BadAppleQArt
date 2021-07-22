@@ -91,15 +91,15 @@ namespace QArt.NET {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             public static bool Check(byte b) {
                 ref sbyte first = ref MemoryMarshal.GetReference(AlphanumericTable);
-                return b is >= 32 and < 91 && Unsafe.Add(ref first, b - 32) >= 0;
+                return b - 32u < 59u && Unsafe.Add(ref first, b - 32) >= 0;
             }
 
             public void Encode(ref QRBitArray.BufferedWriter writer, ReadOnlySpan<byte> data) {
                 ref byte first = ref MemoryMarshal.GetReference(data);
                 ref sbyte table = ref MemoryMarshal.GetReference(AlphanumericTable);
-                int numberOf10Bits = data.Length >> 1;
+                int numberOf11Bits = data.Length >> 1;
                 int i = 0;
-                for (; i < numberOf10Bits; i++) {
+                for (; i < numberOf11Bits; i++) {
                     int vH = Unsafe.Add(ref table, Unsafe.Add(ref first, 2 * i) - 32);
                     int vL = Unsafe.Add(ref table, Unsafe.Add(ref first, 2 * i + 1) - 32);
                     writer.Write(vH * 45 + vL, 11);
@@ -375,7 +375,7 @@ namespace QArt.NET {
             }
         }
 
-        static int GuassVersion(ReadOnlySpan<byte> data, QREcLevel ecLevel, QRDataMode? mode, out EncodedSpan[] encodedSpans, out int totalBits) {
+        static int GuessVersion(ReadOnlySpan<byte> data, QREcLevel ecLevel, QRDataMode? mode, out EncodedSpan[] encodedSpans, out int totalBits) {
             var tempEncodedSpans = BuildSpans(1, mode, data, out totalBits);
             for (int ver = 1; ver <= 9; ver++) {
                 if (totalBits <= (QRHelper.GetDataCapacity(ver, ecLevel) << 3)) {
@@ -448,7 +448,7 @@ namespace QArt.NET {
         public static bool[] Encode(ReadOnlySpan<byte> data, QREcLevel ecLevel, QRDataMode? mode, out int version) {
             if (data.Length > QRHelper.MaxDataLength) throw new ArgumentOutOfRangeException(nameof(data), "数据过大");
 
-            version = GuassVersion(data, ecLevel, mode, out EncodedSpan[] encodedSpans, out int totalBits);
+            version = GuessVersion(data, ecLevel, mode, out EncodedSpan[] encodedSpans, out int totalBits);
             bool[] result = GC.AllocateUninitializedArray<bool>(totalBits);
             EncodeData(data, version, encodedSpans, result);
             return result;
