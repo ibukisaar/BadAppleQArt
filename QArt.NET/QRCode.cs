@@ -6,7 +6,7 @@ using System.Runtime.InteropServices;
 using System.Text;
 
 namespace QArt.NET {
-    unsafe public sealed class QRCode {
+    unsafe public sealed class QRCode : IDisposable {
         public QRLayout Layout { get; }
         public int Version => Layout.Version;
         public QREcLevel EcLevel => Layout.EcLevel;
@@ -190,6 +190,16 @@ namespace QArt.NET {
                 if (y != size - 1) sb.AppendLine();
             }
             return sb.ToString();
+        }
+
+        private void Dispose(bool disposing) {
+            if (disposing) {
+                Values.Dispose();
+            }
+        }
+
+        public void Dispose() {
+            Dispose(disposing: true);
         }
     }
 }
