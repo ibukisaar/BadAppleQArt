@@ -170,9 +170,7 @@ namespace QArt.NET {
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void ByteEncode(byte byteMsg, int xExponent, Span<byte> outEcc) {
-            ReadOnlySpan<byte> shiftTable = new byte[] { 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2 };
-            ref byte shiftFirst = ref MemoryMarshal.GetReference(shiftTable);
-            int shift = Unsafe.Add(ref shiftFirst, outEcc.Length);
+            int shift = (0x02020100 >> ((outEcc.Length - 1) & 0b11000)) & 0xff;
 
             ulong* r = eccTables[outEcc.Length].NativeArray + (xExponent << shift + 8) + (byteMsg << shift);
             MemoryMarshal.CreateReadOnlySpan(ref Unsafe.AsRef<byte>(r), outEcc.Length).CopyTo(outEcc);
